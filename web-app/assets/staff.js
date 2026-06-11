@@ -112,6 +112,61 @@
     drawCentered("请选择网点生成二维码", 750, 690, 1020, 62, "#334155");
   }
 
+  async function makeQrCanvas(text, size) {
+    const qrCanvas = document.createElement("canvas");
+    qrCanvas.width = size;
+    qrCanvas.height = size;
+
+    if (!window.QRCode) {
+      throw new Error("二维码生成库未加载");
+    }
+
+    if (typeof window.QRCode.toCanvas === "function") {
+      await window.QRCode.toCanvas(qrCanvas, text, {
+        width: size,
+        margin: 1,
+        errorCorrectionLevel: "M",
+        color: { dark: "#000000", light: "#ffffff" }
+      });
+      return qrCanvas;
+    }
+
+    const holder = document.createElement("div");
+    holder.style.position = "fixed";
+    holder.style.left = "-9999px";
+    holder.style.top = "-9999px";
+    document.body.appendChild(holder);
+    try {
+      new window.QRCode(holder, {
+        text,
+        width: size,
+        height: size,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : 0
+      });
+
+      const generatedCanvas = holder.querySelector("canvas");
+      if (generatedCanvas) {
+        qrCanvas.getContext("2d").drawImage(generatedCanvas, 0, 0, size, size);
+        return qrCanvas;
+      }
+
+      const image = holder.querySelector("img");
+      if (image) {
+        if (!image.complete && image.decode) {
+          await image.decode();
+        }
+        qrCanvas.getContext("2d").drawImage(image, 0, 0, size, size);
+        return qrCanvas;
+      }
+    } finally {
+      holder.remove();
+    }
+
+    throw new Error("二维码生成失败");
+  }
+
   async function drawPoster(outlet) {
     const width = els.canvas.width;
     const height = els.canvas.height;
@@ -153,14 +208,16 @@
     ctx.lineWidth = 24;
     ctx.stroke();
 
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, App.buildReviewUrl(outlet), {
-      width: 510,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#000000", light: "#ffffff" }
-    });
-    ctx.drawImage(qrCanvas, 495, 368, 510, 510);
+    try {
+      const qrCanvas = await makeQrCanvas(App.buildReviewUrl(outlet), 510);
+      ctx.drawImage(qrCanvas, 495, 368, 510, 510);
+    } catch (error) {
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(495, 368, 510, 510);
+      drawCentered("二维码生成失败", 750, 610, 420, 38, "#c2410c");
+      drawCentered("请刷新页面后重试", 750, 670, 420, 30, "#64748b", "500");
+      console.error(error);
+    }
 
     const steps = [
       ["scan", "1", "打开手机扫一扫", "扫码进入评价页面"],

@@ -17,3 +17,5 @@ project.private.config.json
 *.tmp
 
 .vendor/
+tmp_pages_logs*/
+tmp_pages_logs*.zip
