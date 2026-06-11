@@ -81,6 +81,53 @@ $$;
 revoke all on function public.admin_list_reviews(text, text) from public;
 grant execute on function public.admin_list_reviews(text, text) to anon, authenticated;
 
+create or replace function public.admin_delete_review(admin_user text, admin_password text, review_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  deleted_count integer;
+begin
+  if admin_user <> 'zhangjun2026' or admin_password <> 'zhangjun2026' then
+    raise exception 'invalid admin credentials' using errcode = '28000';
+  end if;
+
+  delete from public.reviews
+  where id = review_id;
+
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
+end;
+$$;
+
+revoke all on function public.admin_delete_review(text, text, uuid) from public;
+grant execute on function public.admin_delete_review(text, text, uuid) to anon, authenticated;
+
+create or replace function public.admin_clear_reviews(admin_user text, admin_password text)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  deleted_count integer;
+begin
+  if admin_user <> 'zhangjun2026' or admin_password <> 'zhangjun2026' then
+    raise exception 'invalid admin credentials' using errcode = '28000';
+  end if;
+
+  delete from public.reviews;
+
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
+end;
+$$;
+
+revoke all on function public.admin_clear_reviews(text, text) from public;
+grant execute on function public.admin_clear_reviews(text, text) to anon, authenticated;
+
 insert into storage.buckets (id, name, public)
 values ('review-photos', 'review-photos', true)
 on conflict (id) do nothing;

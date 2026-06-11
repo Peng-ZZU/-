@@ -138,6 +138,7 @@ textarea:focus {
 
 .primary-button,
 .ghost-button,
+.danger-button,
 .nav-link {
   display: inline-flex;
   align-items: center;
@@ -171,6 +172,21 @@ textarea:focus {
   background: #f5f9fc;
   color: #17466f;
   border-color: #bfd0dd;
+}
+
+.danger-button {
+  background: #fff5f5;
+  color: #b42318;
+  border-color: #f1b8b2;
+}
+
+.danger-button:hover {
+  background: #ffe7e4;
+}
+
+.small-button {
+  min-height: 32px;
+  padding: 0 10px;
 }
 
 .suggestions {

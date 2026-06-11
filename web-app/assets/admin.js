@@ -13,6 +13,7 @@
     adminPassword: document.getElementById("adminPassword"),
     loginButton: document.getElementById("loginButton"),
     logoutButton: document.getElementById("logoutButton"),
+    clearReviews: document.getElementById("clearReviews"),
     status: document.getElementById("adminStatus"),
     tbody: document.getElementById("reviewRows"),
     refresh: document.getElementById("refreshReviews"),
@@ -29,9 +30,42 @@
     els.loginStatus.className = `status-text ${type}`;
   }
 
+  function assertConfig() {
+    const config = App.config || {};
+    if (!config.supabaseUrl || !config.supabaseAnonKey) {
+      throw new Error("还没有配置 Supabase，请先填写 assets/config.js。");
+    }
+    return config;
+  }
+
+  async function callAdminRpc(name, extra = {}) {
+    const config = assertConfig();
+    const response = await fetch(`${config.supabaseUrl}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: config.supabaseAnonKey,
+        Authorization: `Bearer ${config.supabaseAnonKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        admin_user: state.adminUser,
+        admin_password: state.adminPassword,
+        ...extra
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `HTTP ${response.status}`);
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  }
+
   function renderRows() {
     if (!state.rows.length) {
-      els.tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+      els.tbody.innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
       return;
     }
     els.tbody.innerHTML = state.rows
@@ -48,6 +82,7 @@
             <td>${row.service_score || ""}</td>
             <td>${row.feedback || ""}</td>
             <td>${photos}</td>
+            <td><button class="danger-button small-button" type="button" data-delete-id="${row.id}">删除</button></td>
           </tr>
         `;
       })
@@ -70,42 +105,10 @@
     renderRows();
   }
 
-  async function callAdminListReviews() {
-    const config = App.config || {};
-    if (!config.supabaseUrl || !config.supabaseAnonKey) {
-      throw new Error("还没有配置 Supabase，请先填写 assets/config.js。");
-    }
-
-    const response = await fetch(`${config.supabaseUrl}/rest/v1/rpc/admin_list_reviews`, {
-      method: "POST",
-      headers: {
-        apikey: config.supabaseAnonKey,
-        Authorization: `Bearer ${config.supabaseAnonKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        admin_user: state.adminUser,
-        admin_password: state.adminPassword
-      })
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  }
-
   async function loadReviews() {
-    if (!App.config || !App.config.supabaseUrl) {
-      setStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
-      renderRows();
-      return;
-    }
     setStatus("正在加载...");
     try {
-      state.rows = await callAdminListReviews();
+      state.rows = await callAdminRpc("admin_list_reviews");
     } catch (error) {
       setStatus("账号或密码错误，或数据读取失败。", "error");
       setLoginStatus("账号或密码错误。", "error");
@@ -144,6 +147,39 @@
     setLoginStatus("");
     setStatus("");
     showLoginPanel();
+  }
+
+  async function deleteReview(id) {
+    if (!id) return;
+    const confirmed = window.confirm("确定删除这条评价记录吗？删除后不可恢复。");
+    if (!confirmed) return;
+    setStatus("正在删除...");
+    try {
+      await callAdminRpc("admin_delete_review", { review_id: id });
+      await loadReviews();
+      setStatus("已删除 1 条记录。", "ok");
+    } catch (error) {
+      console.error(error);
+      setStatus("删除失败，请刷新后重试。", "error");
+    }
+  }
+
+  async function clearReviews() {
+    if (!state.rows.length) {
+      setStatus("当前没有可清空的数据。");
+      return;
+    }
+    const confirmed = window.confirm(`确定清空全部 ${state.rows.length} 条评价记录吗？清空后不可恢复。`);
+    if (!confirmed) return;
+    setStatus("正在清空...");
+    try {
+      const deletedCount = await callAdminRpc("admin_clear_reviews");
+      await loadReviews();
+      setStatus(`已清空 ${deletedCount || 0} 条记录。`, "ok");
+    } catch (error) {
+      console.error(error);
+      setStatus("清空失败，请刷新后重试。", "error");
+    }
   }
 
   function exportCsv() {
@@ -207,11 +243,12 @@
   }
 
   function init() {
-    if (!App.config || !App.config.supabaseUrl || !App.config.supabaseAnonKey) {
-      setLoginStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
-      return;
+    try {
+      assertConfig();
+      restoreSession();
+    } catch (error) {
+      setLoginStatus(error.message, "error");
     }
-    restoreSession();
   }
 
   els.loginPanel.addEventListener("submit", (event) => {
@@ -220,6 +257,11 @@
   });
   els.logoutButton.addEventListener("click", logout);
   els.refresh.addEventListener("click", loadReviews);
+  els.clearReviews.addEventListener("click", clearReviews);
   els.exportCsv.addEventListener("click", exportCsv);
+  els.tbody.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-delete-id]");
+    if (button) deleteReview(button.dataset.deleteId);
+  });
   init();
 })();
