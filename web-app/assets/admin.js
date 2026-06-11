@@ -1,7 +1,6 @@
 (function () {
   const state = {
     rows: [],
-    client: null,
     adminUser: "",
     adminPassword: ""
   };
@@ -71,24 +70,49 @@
     renderRows();
   }
 
+  async function callAdminListReviews() {
+    const config = App.config || {};
+    if (!config.supabaseUrl || !config.supabaseAnonKey) {
+      throw new Error("还没有配置 Supabase，请先填写 assets/config.js。");
+    }
+
+    const response = await fetch(`${config.supabaseUrl}/rest/v1/rpc/admin_list_reviews`, {
+      method: "POST",
+      headers: {
+        apikey: config.supabaseAnonKey,
+        Authorization: `Bearer ${config.supabaseAnonKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        admin_user: state.adminUser,
+        admin_password: state.adminPassword
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  }
+
   async function loadReviews() {
-    if (!state.client) {
+    if (!App.config || !App.config.supabaseUrl) {
       setStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
       renderRows();
       return;
     }
     setStatus("正在加载...");
-    const { data, error } = await state.client.rpc("admin_list_reviews", {
-      admin_user: state.adminUser,
-      admin_password: state.adminPassword
-    });
-    if (error) {
+    try {
+      state.rows = await callAdminListReviews();
+    } catch (error) {
       setStatus("账号或密码错误，或数据读取失败。", "error");
       setLoginStatus("账号或密码错误。", "error");
+      console.error(error);
       showLoginPanel();
       return;
     }
-    state.rows = data || [];
     renderRows();
     setStatus(`已加载 ${state.rows.length} 条记录`, "ok");
   }
@@ -102,9 +126,11 @@
     }
     state.adminUser = user;
     state.adminPassword = password;
+    els.loginButton.disabled = true;
     setLoginStatus("正在登录...");
     showDataPanel();
     await loadReviews();
+    els.loginButton.disabled = false;
     if (!els.dataPanel.hidden) {
       sessionStorage.setItem("adminUser", user);
       sessionStorage.setItem("adminPassword", password);
@@ -181,17 +207,16 @@
   }
 
   function init() {
-    state.client = App.getSupabaseClient();
-    if (!state.client) {
+    if (!App.config || !App.config.supabaseUrl || !App.config.supabaseAnonKey) {
       setLoginStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
       return;
     }
     restoreSession();
   }
 
-  els.loginButton.addEventListener("click", login);
-  els.adminPassword.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") login();
+  els.loginPanel.addEventListener("submit", (event) => {
+    event.preventDefault();
+    login();
   });
   els.logoutButton.addEventListener("click", logout);
   els.refresh.addEventListener("click", loadReviews);
