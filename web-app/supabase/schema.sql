@@ -22,7 +22,7 @@ drop policy if exists "Anyone can submit reviews" on public.reviews;
 create policy "Anyone can submit reviews"
 on public.reviews
 for insert
-to anon
+to public
 with check (true);
 
 drop policy if exists "Admins can read reviews" on public.reviews;
@@ -40,12 +40,12 @@ drop policy if exists "Anyone can upload review photos" on storage.objects;
 create policy "Anyone can upload review photos"
 on storage.objects
 for insert
-to anon
+to public
 with check (bucket_id = 'review-photos');
 
 drop policy if exists "Anyone can read review photos" on storage.objects;
 create policy "Anyone can read review photos"
 on storage.objects
 for select
-to anon
+to public
 using (bucket_id = 'review-photos');
