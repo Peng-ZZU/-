@@ -2,13 +2,16 @@
   const state = {
     rows: [],
     client: null,
-    session: null
+    adminUser: "",
+    adminPassword: ""
   };
 
   const els = {
     loginPanel: document.getElementById("loginPanel"),
+    dataPanel: document.getElementById("dataPanel"),
     loginStatus: document.getElementById("loginStatus"),
-    adminEmail: document.getElementById("adminEmail"),
+    adminUser: document.getElementById("adminUser"),
+    adminPassword: document.getElementById("adminPassword"),
     loginButton: document.getElementById("loginButton"),
     logoutButton: document.getElementById("logoutButton"),
     status: document.getElementById("adminStatus"),
@@ -52,25 +55,37 @@
       .join("");
   }
 
+  function showDataPanel() {
+    els.loginPanel.hidden = true;
+    els.dataPanel.hidden = false;
+  }
+
+  function showLoginPanel() {
+    els.loginPanel.hidden = false;
+    els.dataPanel.hidden = true;
+    state.rows = [];
+    state.adminUser = "";
+    state.adminPassword = "";
+    sessionStorage.removeItem("adminUser");
+    sessionStorage.removeItem("adminPassword");
+    renderRows();
+  }
+
   async function loadReviews() {
     if (!state.client) {
       setStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
       renderRows();
       return;
     }
-    if (!state.session) {
-      setStatus("请先登录管理员账号。");
-      renderRows();
-      return;
-    }
     setStatus("正在加载...");
-    const { data, error } = await state.client
-      .from("reviews")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1000);
+    const { data, error } = await state.client.rpc("admin_list_reviews", {
+      admin_user: state.adminUser,
+      admin_password: state.adminPassword
+    });
     if (error) {
-      setStatus(`加载失败：${error.message}`, "error");
+      setStatus("账号或密码错误，或数据读取失败。", "error");
+      setLoginStatus("账号或密码错误。", "error");
+      showLoginPanel();
       return;
     }
     state.rows = data || [];
@@ -79,39 +94,30 @@
   }
 
   async function login() {
-    if (!state.client) {
-      setLoginStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
+    const user = els.adminUser.value.trim();
+    const password = els.adminPassword.value;
+    if (!user || !password) {
+      setLoginStatus("请输入账号和密码。", "error");
       return;
     }
-    const email = els.adminEmail.value.trim();
-    if (!email) {
-      setLoginStatus("请输入邮箱。", "error");
-      return;
+    state.adminUser = user;
+    state.adminPassword = password;
+    setLoginStatus("正在登录...");
+    showDataPanel();
+    await loadReviews();
+    if (!els.dataPanel.hidden) {
+      sessionStorage.setItem("adminUser", user);
+      sessionStorage.setItem("adminPassword", password);
+      setLoginStatus("");
     }
-    const { error } = await state.client.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.href }
-    });
-    if (error) {
-      setLoginStatus(`发送失败：${error.message}`, "error");
-      return;
-    }
-    setLoginStatus("登录链接已发送，请打开邮箱完成登录。", "ok");
   }
 
-  async function logout() {
-    if (state.client) await state.client.auth.signOut();
-    state.session = null;
-    state.rows = [];
-    updateAuthUi();
-    renderRows();
-  }
-
-  function updateAuthUi() {
-    const loggedIn = Boolean(state.session);
-    els.loginPanel.hidden = loggedIn;
-    els.logoutButton.hidden = !loggedIn;
-    if (loggedIn) loadReviews();
+  function logout() {
+    els.adminUser.value = "";
+    els.adminPassword.value = "";
+    setLoginStatus("");
+    setStatus("");
+    showLoginPanel();
   }
 
   function exportCsv() {
@@ -159,23 +165,34 @@
     URL.revokeObjectURL(url);
   }
 
-  async function init() {
+  function restoreSession() {
+    const user = sessionStorage.getItem("adminUser");
+    const password = sessionStorage.getItem("adminPassword");
+    if (user && password) {
+      state.adminUser = user;
+      state.adminPassword = password;
+      els.adminUser.value = user;
+      els.adminPassword.value = password;
+      showDataPanel();
+      loadReviews();
+    } else {
+      showLoginPanel();
+    }
+  }
+
+  function init() {
     state.client = App.getSupabaseClient();
     if (!state.client) {
-      setStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
-      renderRows();
+      setLoginStatus("还没有配置 Supabase，请先填写 assets/config.js。", "error");
       return;
     }
-    const { data } = await state.client.auth.getSession();
-    state.session = data.session;
-    state.client.auth.onAuthStateChange((_event, session) => {
-      state.session = session;
-      updateAuthUi();
-    });
-    updateAuthUi();
+    restoreSession();
   }
 
   els.loginButton.addEventListener("click", login);
+  els.adminPassword.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") login();
+  });
   els.logoutButton.addEventListener("click", logout);
   els.refresh.addEventListener("click", loadReviews);
   els.exportCsv.addEventListener("click", exportCsv);
