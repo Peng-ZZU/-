@@ -240,15 +240,7 @@
       drawCentered(step[3], x + 42, 1234, 275, 32, "#374151", "500");
     });
 
-    drawCentered(
-      "微信扫一扫 评价有惊喜（诚邀点评服务与环境，感谢您的支持）",
-      750,
-      1340,
-      1210,
-      34,
-      "#4b5563",
-      "500"
-    );
+    drawCentered("请使用手机浏览器扫码", 750, 1340, 1210, 34, "#4b5563", "500");
   }
 
   function renderSuggestions(query = "") {
@@ -284,7 +276,7 @@
   function renderAreaControls() {
     const cities = [...new Set(state.outlets.map((item) => item.city).filter(Boolean))].sort();
     els.city.innerHTML = cities.map((city) => `<option value="${city}">${city}</option>`).join("");
-    renderDistricts();
+    renderDistricts(false);
   }
 
   function renderDistricts(autoSelectFirst = true) {
@@ -305,10 +297,14 @@
     const city = els.city.value;
     const district = els.district.value;
     const outlets = state.outlets.filter((item) => item.city === city && item.district === district);
-    els.outlet.innerHTML = outlets
-      .map((outlet) => `<option value="${outlet.code}">${outlet.code} ${outlet.name}</option>`)
-      .join("");
-    if (autoSelectFirst && outlets[0]) selectOutlet(outlets[0], false);
+    els.outlet.innerHTML = [
+      '<option value="">请选择网点</option>',
+      ...outlets.map((outlet) => `<option value="${outlet.code}">${outlet.code} ${outlet.name}</option>`)
+    ].join("");
+    if (autoSelectFirst && outlets[0]) {
+      els.outlet.value = outlets[0].code;
+      selectOutlet(outlets[0], false);
+    }
   }
 
   function renderSelected() {
@@ -342,6 +338,9 @@
       els.outlet.value = outlet.code;
       state.selected = outlet;
     }
+    if ([...els.outlet.options].some((option) => option.value === outlet.code)) {
+      els.outlet.value = outlet.code;
+    }
     renderSelected();
   }
 
@@ -357,7 +356,10 @@
     state.outlets = await App.loadOutlets();
     els.count.textContent = `${state.outlets.length} 个网点`;
     renderAreaControls();
-    clearPoster();
+    state.selected = null;
+    els.search.value = "";
+    els.suggestions.innerHTML = "";
+    renderSelected();
   } catch (error) {
     els.count.textContent = "加载失败";
     els.selected.textContent = error.message;
@@ -370,6 +372,12 @@
   els.city.addEventListener("change", renderDistricts);
   els.district.addEventListener("change", renderOutletsByArea);
   els.outlet.addEventListener("change", () => {
+    if (!els.outlet.value) {
+      state.selected = null;
+      els.search.value = "";
+      renderSelected();
+      return;
+    }
     const outlet = App.findOutlet(state.outlets, els.outlet.value);
     if (outlet) selectOutlet(outlet, false);
   });
