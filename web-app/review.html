@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>网点服务评价</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body data-page="review">
+    <main class="review-page">
+      <section class="review-header">
+        <h1 id="reviewOutletName">网点服务评价</h1>
+      </section>
+
+      <section class="info-block">
+        <h2>场地信息</h2>
+        <div id="outletInfo" class="info-list"></div>
+      </section>
+
+      <section class="info-block promise">
+        <h2>服务承诺</h2>
+        <p>真诚服务，安全无忧，准时送达，尽心尽责</p>
+        <p>坚守品质服务，守护每一份信任</p>
+      </section>
+
+      <form id="reviewForm" class="info-block review-form">
+        <label class="rating-row">
+          <span>您对这个网点的环境/感知怎么样？</span>
+          <span class="stars" data-name="environmentScore"></span>
+        </label>
+        <label class="rating-row">
+          <span>您觉得网点的服务态度如何？</span>
+          <span class="stars" data-name="serviceScore"></span>
+        </label>
+
+        <label class="field">
+          <span>这个网点有没有让您印象深刻的亮点或问题？</span>
+          <textarea id="feedback" rows="4" placeholder="请输入您的意见或建议"></textarea>
+        </label>
+
+        <label class="field">
+          <span>拍照或上传照片</span>
+          <input id="photos" type="file" accept="image/*" capture="environment" multiple>
+        </label>
+        <div id="photoList" class="photo-list"></div>
+
+        <button id="submitReview" class="primary-button" type="submit">提交评价</button>
+        <p id="submitStatus" class="status-text"></p>
+      </form>
+    </main>
+
+    <script src="assets/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/common.js"></script>
+    <script src="assets/review.js"></script>
+  </body>
+</html>

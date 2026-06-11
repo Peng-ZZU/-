@@ -1,0 +1,17 @@
+.DS_Store
+Thumbs.db
+*.pyc
+__pycache__/
+.vscode/
+
+# Source spreadsheets and generated image batches stay local.
+*.xlsx
+output/
+output-*/
+staff-code-miniapp/
+customer-review-miniapp/
+project.config.json
+project.private.config.json
+
+*.log
+*.tmp

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>网点评价码生成</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body data-page="staff">
+    <header class="topbar">
+      <div>
+        <h1>网点评价码生成</h1>
+        <p>选择网点后生成高清二维码海报，下载后即可打印张贴。</p>
+      </div>
+      <a class="nav-link" href="admin.html">评价数据</a>
+    </header>
+
+    <main class="layout staff-layout">
+      <section class="panel search-panel">
+        <div class="section-title">
+          <h2>选择网点</h2>
+          <span id="outletCount">加载中</span>
+        </div>
+
+        <label class="field">
+          <span>网点名称 / 编码</span>
+          <input id="searchInput" type="search" placeholder="输入网点名称、编码、地址关键词">
+        </label>
+        <div id="suggestions" class="suggestions"></div>
+
+        <button id="toggleArea" class="ghost-button" type="button">按市、区县查找</button>
+        <div id="areaFinder" class="area-finder" hidden>
+          <label class="field">
+            <span>城市</span>
+            <select id="citySelect"></select>
+          </label>
+          <label class="field">
+            <span>区县</span>
+            <select id="districtSelect"></select>
+          </label>
+          <label class="field">
+            <span>该区县网点</span>
+            <select id="outletSelect"></select>
+          </label>
+        </div>
+
+        <div id="selectedOutlet" class="selected-outlet empty">请选择一个网点</div>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="section-title">
+          <h2>海报预览</h2>
+          <button id="downloadPoster" class="primary-button" type="button" disabled>下载高清图片</button>
+        </div>
+        <div class="poster-stage">
+          <canvas id="posterCanvas" width="1500" height="1500" aria-label="二维码海报预览"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <script src="assets/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+    <script src="assets/common.js"></script>
+    <script src="assets/staff.js"></script>
+  </body>
+</html>

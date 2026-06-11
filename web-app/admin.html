@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>评价数据</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body data-page="admin">
+    <header class="topbar">
+      <div>
+        <h1>评价数据</h1>
+        <p>查看客户扫码提交的评分、意见反馈和照片。</p>
+      </div>
+      <a class="nav-link" href="index.html">生成二维码</a>
+    </header>
+
+    <main class="layout admin-layout">
+      <section id="loginPanel" class="panel login-panel">
+        <div class="section-title">
+          <h2>管理员登录</h2>
+        </div>
+        <label class="field">
+          <span>邮箱</span>
+          <input id="adminEmail" type="email" placeholder="输入管理员邮箱">
+        </label>
+        <button id="loginButton" class="primary-button" type="button">发送登录链接</button>
+        <p id="loginStatus" class="status-text"></p>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>数据列表</h2>
+          <div class="button-row">
+            <button id="logoutButton" class="ghost-button" type="button" hidden>退出登录</button>
+            <button id="refreshReviews" class="ghost-button" type="button">刷新</button>
+            <button id="exportCsv" class="primary-button" type="button">导出 CSV</button>
+          </div>
+        </div>
+        <p id="adminStatus" class="status-text"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>网点编码</th>
+                <th>网点名称</th>
+                <th>环境得分</th>
+                <th>服务得分</th>
+                <th>意见反馈</th>
+                <th>照片</th>
+              </tr>
+            </thead>
+            <tbody id="reviewRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="assets/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/common.js"></script>
+    <script src="assets/admin.js"></script>
+  </body>
+</html>
