@@ -124,8 +124,8 @@
     if (typeof window.QRCode.toCanvas === "function") {
       await window.QRCode.toCanvas(qrCanvas, text, {
         width: size,
-        margin: 1,
-        errorCorrectionLevel: "M",
+        margin: 4,
+        errorCorrectionLevel: "H",
         color: { dark: "#000000", light: "#ffffff" }
       });
       return qrCanvas;
@@ -143,7 +143,7 @@
         height: size,
         colorDark: "#000000",
         colorLight: "#ffffff",
-        correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : 0
+        correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 2
       });
 
       const generatedCanvas = holder.querySelector("canvas");
