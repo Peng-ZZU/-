@@ -287,7 +287,7 @@
     renderDistricts();
   }
 
-  function renderDistricts() {
+  function renderDistricts(autoSelectFirst = true) {
     const city = els.city.value;
     const districts = [
       ...new Set(
@@ -298,17 +298,17 @@
       )
     ].sort();
     els.district.innerHTML = districts.map((district) => `<option value="${district}">${district}</option>`).join("");
-    renderOutletsByArea();
+    renderOutletsByArea(autoSelectFirst);
   }
 
-  function renderOutletsByArea() {
+  function renderOutletsByArea(autoSelectFirst = true) {
     const city = els.city.value;
     const district = els.district.value;
     const outlets = state.outlets.filter((item) => item.city === city && item.district === district);
     els.outlet.innerHTML = outlets
       .map((outlet) => `<option value="${outlet.code}">${outlet.code} ${outlet.name}</option>`)
       .join("");
-    if (outlets[0]) selectOutlet(outlets[0], false);
+    if (autoSelectFirst && outlets[0]) selectOutlet(outlets[0], false);
   }
 
   function renderSelected() {
@@ -336,9 +336,9 @@
     els.suggestions.innerHTML = "";
     if (syncArea && outlet.city && outlet.district) {
       els.city.value = outlet.city;
-      renderDistricts();
+      renderDistricts(false);
       els.district.value = outlet.district;
-      renderOutletsByArea();
+      renderOutletsByArea(false);
       els.outlet.value = outlet.code;
       state.selected = outlet;
     }
